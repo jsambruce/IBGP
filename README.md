@@ -19,7 +19,7 @@ R1, R2, R3, and R4 form a physical ring. The iBGP configuration points each rout
 | R3 | `13.0.0.1/32` | `30.1.1.1/8` | `IBGP-PEERS` | `30.0.0.0/8` |
 | R4 | `14.0.0.1/32` | `40.1.1.1/8` | `IBGP-PEERS` | `40.0.0.0/8` |
 
-The current [full-mesh configs](configs/full-mesh) show all three loopback neighbors on each router, with `update-source Loopback0` on each `IBGP-PEERS` group. The CLI screenshots, captured **before the group-name change**, show three established neighbors per router and all four LAN prefixes in each BGP table. I still need fresh neighbor output after the rename. My first export had two R1 mistakes; the [configuration review](docs/config-review.md) records how I found and corrected them.
+The current [full-mesh configs](configs/full-mesh) show all three loopback neighbors on each router, with `update-source Loopback0` on each `IBGP-PEERS` group. The fresh CLI screenshots show three established neighbors per router and all four LAN prefixes in each BGP table after the rename. My first export had two R1 mistakes; the [configuration review](docs/config-review.md) records how I found and corrected them.
 
 ## 2. Route reflector with two clients
 
@@ -39,10 +39,12 @@ The current [route-reflector configs](configs/route-reflector) show the correcte
 
 | Scenario | Evidence | Result shown |
 | --- | --- | --- |
-| Full mesh | [R1](evidence/full-mesh/R1-bgp.png) · [R2](evidence/full-mesh/R2-bgp.png) · [R3](evidence/full-mesh/R3-bgp.png) · [R4](evidence/full-mesh/R4-bgp.png) | Before the rename, each router had three established iBGP neighbors and saw all four LAN prefixes in its BGP table. |
+| Full mesh | [R1](evidence/full-mesh/R1-bgp.png) · [R2](evidence/full-mesh/R2-bgp.png) · [R3](evidence/full-mesh/R3-bgp.png) · [R4](evidence/full-mesh/R4-bgp.png) | After the rename, each router had three established iBGP neighbors and saw all four LAN prefixes in its BGP table. |
 | Route reflector | [R1-RR](evidence/route-reflector/R1-RR-bgp.png) · [R2-RR](evidence/route-reflector/R2-RR-bgp.png) · [R3-RR](evidence/route-reflector/R3-RR-bgp.png) | R2-RR has both client sessions established. R1-RR sees R3-RR's `30.0.0.0/8`, and R3-RR sees R1-RR's `10.0.0.0/8`. |
 
-The screenshots verify BGP session state and routes in the **BGP tables at the time captured**. The full-mesh peers each show one prefix received, but those captures predate the `IBGP-PEERS` rename. R2-RR shows two from each client; each client shows four from R2-RR. The screenshots do not show the IP routing table or packet forwarding. I still need fresh full-mesh neighbor output and route and ping output before claiming current end-to-end connectivity. The [verification checklist](docs/verification.md) tracks that remaining work.
+The screenshots verify BGP session state and routes in the **BGP tables at the time captured**. After the `IBGP-PEERS` rename, the full-mesh peers each show one prefix received. R2-RR shows two from each client; each client shows four from R2-RR. The screenshots do not show the IP routing table or packet forwarding. I still need route and ping output before claiming end-to-end connectivity. The [verification checklist](docs/verification.md) tracks that remaining work.
+
+The remote full-mesh LAN entries have an `r` status in the screenshots (`RIB-failure` in the IOS legend). They appear in BGP, but the screenshots do not show those BGP paths installed in the IP routing table. OSPF advertises the same LANs in this lab, which may explain the result; `show ip route` is needed to confirm which protocol won.
 
 ## Compare the two approaches
 
@@ -66,4 +68,4 @@ The original EVE-NG ZIP and Cisco router image are not included. The addresses s
 
 ## What I learned
 
-The physical links do not tell the whole iBGP story: the full mesh peers by loopback, while the route reflector clients peer directly with R2-RR. Checking the saved configs caught a missing loopback update source, a missing R1 BGP network statement, and an address-mask mismatch. The BGP captures showed sessions and route exchange before I standardized the peer-group name; I still need to recheck them after that change. I also learned that a successful ping alone would be weak proof of BGP route exchange here because the full-mesh OSPF configuration advertises the LANs too.
+The physical links do not tell the whole iBGP story: the full mesh peers by loopback, while the route reflector clients peer directly with R2-RR. Checking the saved configs caught a missing loopback update source, a missing R1 BGP network statement, and an address-mask mismatch. Fresh BGP captures confirmed the sessions and route exchange after I standardized the peer-group name. I also learned that a successful ping alone would be weak proof of BGP route exchange here because the full-mesh OSPF configuration advertises the LANs too.

@@ -1,10 +1,10 @@
 # Verification checklist
 
-The latest EVE-NG export contains startup configurations for all seven routers, including the full-mesh peer-group rename to `IBGP-PEERS`. The CLI screenshots show BGP session and table output **before that final rename**. They are evidence from one capture, not a current health check.
+The latest EVE-NG export contains startup configurations for all seven routers, including the full-mesh peer-group rename to `IBGP-PEERS`. The full-mesh CLI screenshots were captured after the rename. They are evidence from one capture, not a continuous health check.
 
 ## Full mesh: R1, R2, R3, R4
 
-Captured on **each** router before the peer-group rename:
+Captured on **each** full-mesh router after the peer-group rename:
 
 ```text
 show ip bgp summary
@@ -13,7 +13,7 @@ show ip bgp
 
 Each router is configured for three iBGP neighbors. In the supplied `show ip bgp summary` screenshots, all three peers on each router show a numeric `State/PfxRcd` of `1`, indicating established sessions on this IOS version. A state such as `Idle` or `Active` would not.
 
-**Needed after the rename:** Run `show ip bgp summary` and `show ip bgp` on R1, R2, R3, and R4. I need numeric `State/PfxRcd` values for all three neighbors on each router and the four LAN prefixes in each BGP table before claiming the renamed configuration is operational.
+The new screenshots show numeric `State/PfxRcd` values for all three neighbors on each router and the four LAN prefixes in each BGP table.
 
 The screenshots show `10.0.0.0/8`, `20.0.0.0/8`, `30.0.0.0/8`, and `40.0.0.0/8` in each router's BGP table. For a concrete next check, run these on full-mesh **R1** and send the output:
 
@@ -25,6 +25,8 @@ ping 30.1.1.1 source 10.1.1.1
 ```
 
 The saved OSPF configs also advertise all four LANs. A successful ping or a LAN route in the IP routing table therefore does **not**, by itself, prove that BGP carried the prefix. The `show ip route 30.0.0.0` output will identify the installed source. If testing BGP-only LAN routing is the goal, remove the LANs from OSPF as a separate, documented experiment after the underlay and BGP sessions are stable.
+
+The remote LAN entries in the full-mesh BGP screenshots show `r` for `RIB-failure`. That is a reason to check the IP routing table before making any forwarding claim. OSPF advertising those same LANs is a possible explanation, not yet a verified cause.
 
 ## Route reflector: R1-RR, R2-RR, R3-RR
 
@@ -55,7 +57,7 @@ Text output is preferable to screenshots for checking exact prefixes and neighbo
 | Check | Current status |
 | --- | --- |
 | Saved configurations for seven nodes | Latest export reviewed and sanitized in this repository |
-| Full-mesh session states | Three established peers per router in screenshots captured before the peer-group rename; fresh output pending |
+| Full-mesh session states | Three established peers per router in screenshots captured after the peer-group rename |
 | Route-reflector session states | Both client sessions established in screenshots |
 | BGP tables and reflected route | Both clients show the other client's LAN prefix |
 | IP route, next-hop, and ping results | Not supplied; forwarding remains unverified |
