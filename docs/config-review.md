@@ -1,0 +1,60 @@
+# Configuration review: first export and corrected export
+
+I compared the first EVE-NG export with the latest saved export and the CLI screenshots. The public config files are from the **latest** export. They preserve the routing settings but remove the full-mesh BGP neighbor password lines.
+
+The latest export confirms the commands and interface mask below. The CLI screenshots separately confirm BGP session state and route exchange at the time captured. I have not yet checked IP routing-table installation or packet forwarding.
+
+## Full mesh R1: loopback update source corrected
+
+The first export showed R1 peering with `12.0.0.1`, `13.0.0.1`, and `14.0.0.1` without an update source, while R2–R4 peered with R1 at `11.0.0.1` and used `update-source Loopback0`. R1 could have sourced an outgoing connection from a physical interface address the other routers did not configure as a neighbor. The latest R1 config contains `neighbor NEXT update-source Loopback0`; its CLI screenshot shows three established peers.
+
+The correction made on full-mesh R1 was:
+
+```text
+configure terminal
+router bgp 500
+ neighbor NEXT update-source Loopback0
+end
+copy running-config startup-config
+```
+
+The [four full-mesh screenshots](../evidence/full-mesh) show three established neighbors per router. A saved config alone would not prove session success.
+
+## Full mesh R1: LAN network statement added
+
+The first export had `10.1.1.1/8` on R1 Ethernet0/2 but no BGP `network 10.0.0.0` statement. The latest R1 config includes it, and R1's BGP screenshot shows `10.0.0.0/8` locally originated. The correction was:
+
+```text
+configure terminal
+router bgp 500
+ network 10.0.0.0
+end
+copy running-config startup-config
+```
+
+All four full-mesh routers also advertise their LANs into OSPF. This helps reachability but makes a successful ping insufficient as proof that BGP carried a LAN route. See the [verification checklist](verification.md).
+
+## Route reflector R3-RR: LAN mask corrected
+
+The first export had R3-RR Ethernet0/1 at `30.1.1.1/24`, while its topology label and BGP statement used `30.0.0.0/8`. The latest export has `30.1.1.1 255.0.0.0` on that interface, matching the intended `/8`. R3-RR's BGP screenshot shows it originating `30.0.0.0/8`, and R1-RR's table shows the prefix learned through R2-RR.
+
+The correction made on R3-RR was:
+
+```text
+configure terminal
+interface Ethernet0/1
+ ip address 30.1.1.1 255.0.0.0
+end
+copy running-config startup-config
+```
+
+The latest export also confirms the distinct `R1-RR`, `R2-RR`, and `R3-RR` hostnames. The two topologies reuse addresses but remain disconnected.
+
+## Public config note
+
+The exported full-mesh configs contained a shared BGP neighbor password. Its value is absent from this repository. If BGP authentication is needed when recreating the lab, configure the same fresh secret on both ends of every peer relationship.
+
+## Cisco references
+
+- [Configuring internal BGP and route reflectors](https://www.cisco.com/c/en/us/td/docs/routers/ios/config/17-x/ip-routing/b-ip-routing/m_irg-int-features-0.html)
+- [Troubleshooting BGP routes that do not advertise](https://www.cisco.com/c/en/us/support/docs/ip/border-gateway-protocol-bgp/19345-bgp-noad.html)

@@ -1,0 +1,18 @@
+# Keep raw exports and device images out of the public project.
+raw/
+*.zip
+*.unl
+*.qcow2
+*.vmdk
+*.vdi
+*.iso
+*.ova
+*.ovf
+*.img
+*.bin
+*.pem
+*.key
+*.p12
+*.pfx
+.env
+.env.*
