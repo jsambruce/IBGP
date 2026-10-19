@@ -2,7 +2,7 @@
 
 I compared the first EVE-NG export with the latest saved export and the CLI screenshots. The public config files are from the **latest** export. They preserve the routing settings but remove the full-mesh BGP neighbor password lines.
 
-The latest export confirms the commands and interface mask below. The fresh CLI screenshots separately confirm BGP session state and route exchange after the peer-group rename. I have not yet checked IP routing-table installation or packet forwarding.
+The latest supplied export confirms the commands and interface mask below. The BGP screenshots separately confirm session state and route exchange after the peer-group rename. Later routing-table screenshots confirm that remote full-mesh LAN routes were installed from BGP, and one sourced ping succeeded after the live OSPF change. The saved export of that change is still pending.
 
 ## Full mesh R1: loopback update source corrected
 
@@ -36,9 +36,9 @@ end
 copy running-config startup-config
 ```
 
-All four full-mesh routers also advertise their LANs into OSPF. This helps reachability but makes a successful ping insufficient as proof that BGP carried a LAN route. See the [verification checklist](verification.md).
+The saved full-mesh configs also advertise their LANs into OSPF. This made a successful ping insufficient as proof that BGP carried a LAN route. See the [verification checklist](verification.md).
 
-In the fresh full-mesh BGP screenshots, remote LAN routes carry the `r` status (`RIB-failure` in the command legend). BGP has learned them, but that status does not support a claim that BGP installed them in the IP routing table. OSPF is a possible competing route source because it advertises those LANs; I still need `show ip route` output to identify the installed source.
+In the earlier full-mesh BGP screenshots, remote LAN routes carry the `r` status (`RIB-failure` in the command legend). BGP had learned them, but that status did not show installation in the IP routing table. OSPF was a possible competing route source because it advertised those LANs. After the live OSPF change, [new routing-table screenshots](verification.md#later-lab-test-let-ibgp-carry-the-lans) show the remote LAN routes installed as `B [200/0]` on all four full-mesh routers. No pre-change routing table or RIB-failure reason was captured, so I cannot prove the earlier `r` markers were caused solely by OSPF.
 
 ## Route reflector R3-RR: LAN mask corrected
 

@@ -2,7 +2,7 @@
 
 I built two separate iBGP scenarios on one EVE-NG canvas. On the left, four routers use peer groups to configure a full mesh. On the right, R2-RR acts as a route reflector for R1-RR and R3-RR. The scenarios have **no link between them**; each stands on its own in AS 500.
 
-I saved seven sanitized startup configurations from the latest export, cropped topology screenshots, and screenshots of live BGP output from every router. The Cisco image and original EVE-NG export are not included.
+I saved seven sanitized startup configurations from the latest supplied export, topology screenshots, and screenshots of live BGP output from every router. The Cisco image and original EVE-NG export are not included. The saved configs predate a later OSPF change in the full mesh; I am waiting for a new export before updating them.
 
 The latest ZIP contains one EVE-NG `.unl` topology file with seven nodes, six link segments, and seven embedded startup configs. It contains no CLI outputs or screenshots; those were supplied separately. I used the `.unl` file to verify that the two groups of routers have no link between them, then kept the original archive out of the public project.
 
@@ -40,11 +40,12 @@ The current [route-reflector configs](configs/route-reflector) show the correcte
 | Scenario | Evidence | Result shown |
 | --- | --- | --- |
 | Full mesh | [R1](evidence/full-mesh/R1-bgp.png) · [R2](evidence/full-mesh/R2-bgp.png) · [R3](evidence/full-mesh/R3-bgp.png) · [R4](evidence/full-mesh/R4-bgp.png) | After the rename, each router had three established iBGP neighbors and saw all four LAN prefixes in its BGP table. |
+| Full mesh, later routing check | [R1 and ping](evidence/full-mesh/R1-routing-and-ping.png) · [R2](evidence/full-mesh/R2-routing.png) · [R3](evidence/full-mesh/R3-routing.png) · [R4](evidence/full-mesh/R4-routing.png) | All three remote LAN routes appear as `B [200/0]` on each router; R1's sourced ping to R3 succeeded 5/5. |
 | Route reflector | [R1-RR](evidence/route-reflector/R1-RR-bgp.png) · [R2-RR](evidence/route-reflector/R2-RR-bgp.png) · [R3-RR](evidence/route-reflector/R3-RR-bgp.png) | R2-RR has both client sessions established. R1-RR sees R3-RR's `30.0.0.0/8`, and R3-RR sees R1-RR's `10.0.0.0/8`. |
 
-The screenshots verify BGP session state and routes in the **BGP tables at the time captured**. After the `IBGP-PEERS` rename, the full-mesh peers each show one prefix received. R2-RR shows two from each client; each client shows four from R2-RR. The screenshots do not show the IP routing table or packet forwarding. I still need route and ping output before claiming end-to-end connectivity. The [verification checklist](docs/verification.md) tracks that remaining work.
+The BGP screenshots verify session state and routes in the **BGP tables at the time captured**. After the `IBGP-PEERS` rename, the full-mesh peers each show one prefix received. R2-RR shows two from each client; each client shows four from R2-RR.
 
-The remote full-mesh LAN entries have an `r` status in the screenshots (`RIB-failure` in the IOS legend). They appear in BGP, but the screenshots do not show those BGP paths installed in the IP routing table. OSPF advertises the same LANs in this lab, which may explain the result; `show ip route` is needed to confirm which protocol won.
+In those earlier full-mesh captures, remote LAN entries had an `r` status (`RIB-failure` in the IOS legend). The later `show ip route` screenshots show all three remote LAN `/8` routes installed as `B [200/0]` on each full-mesh router. On R1, the route to `13.0.0.1/32` still appears through OSPF, and a sourced ping from `10.1.1.1` to `30.1.1.1` succeeded 5/5. These observations verify routing-table installation and that one end-to-end test, not every possible path. I still need the post-change saved export to confirm the exact OSPF configuration and fresh BGP summaries. The [verification checklist](docs/verification.md) tracks the evidence.
 
 ## Compare the two approaches
 
@@ -68,4 +69,4 @@ The original EVE-NG ZIP and Cisco router image are not included. The addresses s
 
 ## What I learned
 
-The physical links do not tell the whole iBGP story: the full mesh peers by loopback, while the route reflector clients peer directly with R2-RR. Checking the saved configs caught a missing loopback update source, a missing R1 BGP network statement, and an address-mask mismatch. Fresh BGP captures confirmed the sessions and route exchange after I standardized the peer-group name. I also learned that a successful ping alone would be weak proof of BGP route exchange here because the full-mesh OSPF configuration advertises the LANs too.
+The physical links do not tell the whole iBGP story: the full mesh peers by loopback, while the route reflector clients peer directly with R2-RR. Checking the saved configs caught a missing loopback update source, a missing R1 BGP network statement, and an address-mask mismatch. Fresh BGP captures confirmed the sessions and route exchange after I standardized the peer-group name. I also learned to check the IP routing table: OSPF originally advertised the same LANs, so BGP could learn them without being used to forward traffic. The later routing-table captures show the remote LANs installed from BGP.
