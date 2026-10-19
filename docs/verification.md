@@ -1,10 +1,10 @@
 # Verification checklist
 
-The latest EVE-NG export contains corrected startup configurations for all seven routers. CLI screenshots show live BGP session and table output after those changes. The screenshots are evidence from one capture, not a continuous health check.
+The latest EVE-NG export contains startup configurations for all seven routers, including the full-mesh peer-group rename to `IBGP-PEERS`. The CLI screenshots show BGP session and table output **before that final rename**. They are evidence from one capture, not a current health check.
 
 ## Full mesh: R1, R2, R3, R4
 
-Already captured on **each** router:
+Captured on **each** router before the peer-group rename:
 
 ```text
 show ip bgp summary
@@ -12,6 +12,8 @@ show ip bgp
 ```
 
 Each router is configured for three iBGP neighbors. In the supplied `show ip bgp summary` screenshots, all three peers on each router show a numeric `State/PfxRcd` of `1`, indicating established sessions on this IOS version. A state such as `Idle` or `Active` would not.
+
+**Needed after the rename:** Run `show ip bgp summary` and `show ip bgp` on R1, R2, R3, and R4. I need numeric `State/PfxRcd` values for all three neighbors on each router and the four LAN prefixes in each BGP table before claiming the renamed configuration is operational.
 
 The screenshots show `10.0.0.0/8`, `20.0.0.0/8`, `30.0.0.0/8`, and `40.0.0.0/8` in each router's BGP table. For a concrete next check, run these on full-mesh **R1** and send the output:
 
@@ -53,7 +55,7 @@ Text output is preferable to screenshots for checking exact prefixes and neighbo
 | Check | Current status |
 | --- | --- |
 | Saved configurations for seven nodes | Latest export reviewed and sanitized in this repository |
-| Full-mesh session states | Three established peers per router in screenshots |
+| Full-mesh session states | Three established peers per router in screenshots captured before the peer-group rename; fresh output pending |
 | Route-reflector session states | Both client sessions established in screenshots |
 | BGP tables and reflected route | Both clients show the other client's LAN prefix |
 | IP route, next-hop, and ping results | Not supplied; forwarding remains unverified |

@@ -2,13 +2,13 @@
 
 I compared the first EVE-NG export with the latest saved export and the CLI screenshots. The public config files are from the **latest** export. They preserve the routing settings but remove the full-mesh BGP neighbor password lines.
 
-The latest export confirms the commands and interface mask below. The CLI screenshots separately confirm BGP session state and route exchange at the time captured. I have not yet checked IP routing-table installation or packet forwarding.
+The latest export confirms the commands and interface mask below. The CLI screenshots separately confirm BGP session state and route exchange at the time captured. They predate the final peer-group rename. I have not yet checked the sessions after that rename, IP routing-table installation, or packet forwarding.
 
 ## Full mesh R1: loopback update source corrected
 
-The first export showed R1 peering with `12.0.0.1`, `13.0.0.1`, and `14.0.0.1` without an update source, while R2–R4 peered with R1 at `11.0.0.1` and used `update-source Loopback0`. R1 could have sourced an outgoing connection from a physical interface address the other routers did not configure as a neighbor. The latest R1 config contains `neighbor NEXT update-source Loopback0`; its CLI screenshot shows three established peers.
+The first export showed R1 peering with `12.0.0.1`, `13.0.0.1`, and `14.0.0.1` without an update source, while R2–R4 peered with R1 at `11.0.0.1` and used `update-source Loopback0`. R1 could have sourced an outgoing connection from a physical interface address the other routers did not configure as a neighbor. The latest R1 config contains `neighbor IBGP-PEERS update-source Loopback0`; its earlier CLI screenshot shows three established peers before the group name changed.
 
-The correction made on full-mesh R1 was:
+The correction made on full-mesh R1, when the group was still named `NEXT`, was:
 
 ```text
 configure terminal
@@ -18,7 +18,11 @@ end
 copy running-config startup-config
 ```
 
-The [four full-mesh screenshots](../evidence/full-mesh) show three established neighbors per router. A saved config alone would not prove session success.
+The [four full-mesh screenshots](../evidence/full-mesh) show three established neighbors per router before the rename. A saved config alone does not prove those sessions stayed up afterward.
+
+## Full mesh: peer-group name standardized
+
+The latest export changes the local group name from `NEXT` on R1 and `CCIE` on R2–R4 to `IBGP-PEERS` on all four routers. The group settings and three neighbor assignments per router are otherwise unchanged in the saved configs. Peer-group names are local labels; fresh `show ip bgp summary` output is still needed to confirm the sessions after the change.
 
 ## Full mesh R1: LAN network statement added
 
